@@ -15,15 +15,20 @@ int P4 = 9;  // SWITCH Alarm
 #define buzzer 10
 
 int menu = 0;
-int stateOn = 0;
-int setOn = 0;
-int setAll = 0;
 
+//An
+uint8_t alarmHours = 0, alarmMinutes = 0, eHour = 0, eMin = 0, oHour = 0, oMin = 0;  // Holds the current alarm time
+int setAll = 0;
+//An
+
+//Viet anh
 int gio = 0;
 int phut = 0;
 int giay = 0;
-bool RUN = true;
-uint8_t alarmHours = 0, alarmMinutes = 0, eHour = 0, eMin = 0, oHour = 0, oMin = 0;  // Holds the current alarm time
+bool countDownSet = true;
+//Viet anh
+
+
 
 void setup() {
 
@@ -54,43 +59,37 @@ void setup() {
 
 void loop() {
 
-  if (digitalRead(P1) == LOW) {
-    menu = menu + 1;
-  }
-
-  if (menu == 0) {
+  if (menu == 0) {  //Home
     DisplayDateTime();
     Alarm();
+
+    if (digitalRead(P1) == LOW) {  //Menu
+      menu = 1;
+    }
   }
   if (menu == 1) {
     lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("1: Next");
     lcd.setCursor(0, 1);
     lcd.print("2: Set Alarm");
+    lcd.setCursor(0, 2);
+    lcd.print("3: Set Time");
 
-    if (digitalRead(P2) == LOW) {
+    if (digitalRead(P2) == LOW) {  //Alarm
       setAlarm();
+      setAll = 1;
       menu = 0;
+      lcd.clear();
+    }
+
+    if (digitalRead(P3) == LOW) {  //CountDown
+      SetTimeCountDown();
+      lcd.clear();
+      CountDown();
     }
   }
   if (menu == 2) {
-    // lcd.clear();
-    lcd.setCursor(0, 1);
-    lcd.print("2: Set time");
-
-    if (digitalRead(P2) == LOW) {
-      countDown();
-      menu=3;
-    }
-    delay(2000);
-    lcd.clear();
-    // count();
-  }
-  if (menu == 3) {
-    count();
-
-    if(digitalRead(P1) == LOW){
-      menu=0;
-    }
   }
   if (menu == 4) {
   }
@@ -100,10 +99,10 @@ void loop() {
   }
   delay(100);
 }
-
+////////////////////////////////////////////////////////
 void setAlarm() {
-  DisplaySetHourAll();
-  DisplaySetMinuteAll();
+  SetHourAlarm();
+  SetMinuteAlarm();
   lcd.clear();
   lcd.setCursor(5, 0);
   lcd.print("ALARM");
@@ -156,10 +155,9 @@ void DisplayDateTime() {
   lcd.print(DOW[now.dayOfTheWeek()]);
 }
 
-void DisplaySetHourAll() {
+void SetHourAlarm() {
+  lcd.clear();
   while (digitalRead(P4) == HIGH) {
-
-    lcd.clear();
 
     if (digitalRead(P2) == LOW) {
       if (alarmHours == 23) {
@@ -175,21 +173,25 @@ void DisplaySetHourAll() {
         alarmHours = alarmHours - 1;
       }
     }
+    Serial.println(alarmHours);
     EEPROM.write(0, alarmHours);
     lcd.setCursor(0, 0);
     lcd.print("Set HOUR Alarm:");
     lcd.setCursor(0, 1);
+    if (alarmHours <= 9) {
+      lcd.print("0");
+    }
     lcd.print(alarmHours, DEC);
     delay(200);
   }
   delay(200);
 }
 
-void DisplaySetMinuteAll()  // Setting the alarm minutes
+void SetMinuteAlarm()  // Setting the alarm minutes
 {
+  lcd.clear();
   while (digitalRead(P4) == HIGH) {
 
-    lcd.clear();
     if (digitalRead(P2) == LOW) {
       if (alarmMinutes == 59) {
         alarmMinutes = 0;
@@ -208,6 +210,9 @@ void DisplaySetMinuteAll()  // Setting the alarm minutes
     lcd.setCursor(0, 0);
     lcd.print("Set MIN. Alarm:");
     lcd.setCursor(0, 1);
+    if (alarmMinutes <= 9) {
+      lcd.print("0");
+    }
     lcd.print(alarmMinutes, DEC);
     delay(200);
   }
@@ -264,16 +269,16 @@ void Alarm() {
     Serial.print(oMin);
     Serial.println();
 
-
-
     if (now.hour() == eHour && now.minute() == eMin) {
-      lcd.noBacklight();
       DateTime now = RTC.now();
-      digitalWrite(LED, HIGH);
-      tone(buzzer, 880);
-      delay(300);
-      tone(buzzer, 698);
-      lcd.backlight();
+      for (int i = 0; i < 10; i++) {
+        digitalWrite(buzzer, 880);
+        digitalWrite(LED, HIGH);
+        delay(300);
+        digitalWrite(buzzer, 698);
+        digitalWrite(LED, LOW);
+        delay(300);
+      }
     } else {
       noTone(buzzer);
       digitalWrite(LED, LOW);
@@ -284,82 +289,75 @@ void Alarm() {
   }
   delay(200);
 }
-
-void countDown() {
+////////////////////////////////////////////////////////
+void SetTimeCountDown() {
   lcd.clear();
-
   SetHour();
   SetMinute();
   SetSecond();
-  lcd.clear();
-  lcd.setCursor(0, 1);
-  lcd.print("Count down:");
-  lcd.setCursor(0, 1);
-  lcd.print(gio, DEC);
-  lcd.print(":");
-  lcd.print(phut, DEC);
-  lcd.print(":");
-  lcd.print(giay, DEC);
-  delay(1000);
-  lcd.clear();
+  countDownSet = true;
 }
 
-void count() {
-  // countDown();
-
+void CountDown() {
+  lcd.clear();
   gio = EEPROM.read(2);
   phut = EEPROM.read(3);
   giay = EEPROM.read(4);
 
-  giay = giay - 1;
-  delay(1000);
-  if (giay == -1) {
-    giay = 59;
-    phut = phut - 1;
-  }
-  if (phut == -1) {
-    phut = 59;
-    gio = gio - 1;
-  }
-  if (gio == -1) gio = 0;
-  lcd.setCursor(0, 1);
-  lcd.print("Count down: ");
-  if (gio <= 9) {
-    lcd.print('0');
-  }
-  lcd.print(gio);
-  lcd.print(':');
-  if (phut <= 9) {
-    lcd.print('0');
-  }
-  lcd.print(phut);
-  lcd.print(':');
-  if (giay <= 9) {
-    lcd.print('0');
-  }
-  lcd.print(giay);
-  if (gio == 0 && phut == 0 && giay == 0) {
-    digitalWrite(LED, LOW);
-    RUN = false;
-    for (int i = 0; i < 20; i++) {
-      digitalWrite(buzzer, HIGH);
-      delay(100);
-      digitalWrite(buzzer, LOW);
-      delay(100);
+  while (countDownSet == true) {
+    giay = giay - 1;
+    delay(1000);
+    if (giay == -1) {
+      giay = 59;
+      phut = phut - 1;
+    }
+    if (phut == -1) {
+      phut = 59;
+      gio = gio - 1;
+    }
+    if (gio == -1) gio = 0;
+    lcd.setCursor(0, 1);
+    lcd.print("Count down: ");
+    if (gio <= 9) {
+      lcd.print('0');
+    }
+    lcd.print(gio);
+    lcd.print(':');
+    if (phut <= 9) {
+      lcd.print('0');
+    }
+    lcd.print(phut);
+    lcd.print(':');
+    if (giay <= 9) {
+      lcd.print('0');
+    }
+    lcd.print(giay);
+    if (gio == 0 && phut == 0 && giay == 0) {
+      for (int i = 0; i < 10; i++) {
+        digitalWrite(buzzer, HIGH);
+        digitalWrite(LED, HIGH);
+        delay(100);
+        digitalWrite(buzzer, LOW);
+        digitalWrite(LED, LOW);
+        delay(100);
+      }
+      lcd.clear();
+      countDownSet = false;
+      menu = 0;
     }
   }
-  EEPROM.write(2, gio);
-  EEPROM.write(3, phut);
-  EEPROM.write(4, giay);
 }
-
+////////////////////////////////////////////////////////
 void SetHour() {
+  lcd.clear();
   while (digitalRead(P4) == HIGH) {
 
-    lcd.clear();
-
     if (digitalRead(P2) == LOW) {
-      gio = gio + 1;
+      if (gio == 99) {
+        gio = 0;
+      } else {
+        gio = gio + 1;
+      }
     }
     if (digitalRead(P3) == LOW) {
       if (gio == 0) {
@@ -372,6 +370,9 @@ void SetHour() {
     lcd.setCursor(0, 0);
     lcd.print("Choose hour:");
     lcd.setCursor(0, 1);
+    if (gio <= 9) {
+      lcd.print("0");
+    }
     lcd.print(gio, DEC);
     delay(200);
   }
@@ -380,9 +381,9 @@ void SetHour() {
 
 void SetMinute()  // Setting the alarm minutes
 {
+  lcd.clear();
   while (digitalRead(P4) == HIGH) {
 
-    lcd.clear();
     if (digitalRead(P2) == LOW) {
       if (phut == 59) {
         phut = 0;
@@ -408,9 +409,8 @@ void SetMinute()  // Setting the alarm minutes
 }
 
 void SetSecond() {
+  lcd.clear();
   while (digitalRead(P4) == HIGH) {
-
-    lcd.clear();
 
     if (digitalRead(P2) == LOW) {
       if (giay == 59) {
@@ -430,8 +430,12 @@ void SetSecond() {
     lcd.setCursor(0, 0);
     lcd.print("Choose second:");
     lcd.setCursor(0, 1);
+    if (phut <= 9) {
+      lcd.print("0");
+    }
     lcd.print(giay, DEC);
     delay(200);
   }
   delay(200);
 }
+////////////////////////////////////////////////////////
