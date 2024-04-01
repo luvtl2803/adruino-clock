@@ -26,10 +26,18 @@ int gio = 0;
 int phut = 0;
 int giay = 0;
 bool countDownSet = true;
-//Viet anh
+
 //Hai
 int currentOffset = 7;
 
+//Luong
+
+int h = 0;
+int m = 0;
+int s = 0;
+int dem = 0;
+int row = 0;
+volatile bool timingStarted = false;
 
 
 void setup() {
@@ -83,11 +91,13 @@ void loop() {
   if (menu == 1) {
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("1: Next");
+    lcd.print("1: Back");
     lcd.setCursor(0, 1);
-    lcd.print("2: Set Alarm");
+    lcd.print("2: Alarm");
     lcd.setCursor(0, 2);
-    lcd.print("3: Set Time");
+    lcd.print("3: Count down");
+    lcd.setCursor(0, 3);
+    lcd.print("4: Count");
 
     if (digitalRead(P2) == LOW) {  //Alarm
       setAlarm();
@@ -101,14 +111,13 @@ void loop() {
       lcd.clear();
       CountDown();
     }
-  }
-  if (menu == 2) {
-  }
-  if (menu == 4) {
-  }
-  if (menu == 5) {
-  }
-  if (menu == 6) {
+
+    if (digitalRead(P4) == LOW) {
+      lcd.clear();
+      displaySaveTime();
+      timingStarted = true;
+      setCount();
+    }
   }
   delay(100);
 }
@@ -292,6 +301,7 @@ void Alarm() {
         digitalWrite(LED, LOW);
         delay(300);
       }
+      setAll = 0;
     } else {
       noTone(buzzer);
       digitalWrite(LED, LOW);
@@ -328,7 +338,8 @@ void CountDown() {
       phut = 59;
       gio = gio - 1;
     }
-    if (gio == -1) gio = 0;
+    if (gio == -1)
+      gio = 0;
     lcd.setCursor(0, 1);
     lcd.print("Count down: ");
     if (gio <= 9) {
@@ -357,6 +368,12 @@ void CountDown() {
       lcd.clear();
       countDownSet = false;
       menu = 0;
+    }
+    if (digitalRead(P1) == LOW) {
+      lcd.clear();
+      countDownSet = false;
+      menu = 0;
+      break;
     }
   }
 }
@@ -415,6 +432,9 @@ void SetMinute()  // Setting the alarm minutes
     lcd.setCursor(0, 0);
     lcd.print("Choose minute: ");
     lcd.setCursor(0, 1);
+    if (phut <= 9) {
+      lcd.print('0');
+    }
     lcd.print(phut, DEC);
     delay(200);
   }
@@ -443,7 +463,7 @@ void SetSecond() {
     lcd.setCursor(0, 0);
     lcd.print("Choose second:");
     lcd.setCursor(0, 1);
-    if (phut <= 9) {
+    if (giay <= 9) {
       lcd.print("0");
     }
     lcd.print(giay, DEC);
@@ -453,10 +473,93 @@ void SetSecond() {
 }
 ////////////////////////////////////////////////////////
 void adjustTimezone(int time) {
-  DateTime now = RTC.now(); // Get current time from RTC
+  DateTime now = RTC.now();  // Get current time from RTC
   int changeTime = time - currentOffset;
   currentOffset = time;
-  TimeSpan offset = TimeSpan(0, changeTime, 0, 0); // Create TimeSpan for the new timezone offset
-  DateTime adjustedTime = now + offset; // Add the offset to the current time to get the adjusted time
-  RTC.adjust(adjustedTime); // Update RTC with the adjusted time
+  TimeSpan offset = TimeSpan(0, changeTime, 0, 0);  // Create TimeSpan for the new timezone offset
+  DateTime adjustedTime = now + offset;             // Add the offset to the current time to get the adjusted time
+  RTC.adjust(adjustedTime);                         // Update RTC with the adjusted time
+}
+////////////////////////////////////////////////////////
+void setCount() {
+  while (timingStarted == true) {
+    s = s + 1;
+    delay(1000);
+    if (s == 60) {
+      s = 1;
+      m = m + 1;
+    }
+    if (m == 60) {
+      m = 1;
+      h = h + 1;
+    }
+    displaySaveTime();
+    if (digitalRead(P3) == LOW) {
+      EEPROM.write(5, h);
+      EEPROM.write(6, m);
+      EEPROM.write(7, s);
+      saveTime();
+    }
+    if (digitalRead(P1) == LOW) {
+      lcd.clear();
+
+      h = 0;
+      m = 0;
+      s = 0;
+
+      timingStarted == false;
+      menu = 0;
+      break;
+    }
+  }
+}
+void saveTime() {
+  dem = dem + 1;
+  row = row + 1;
+  //
+  int ho = EEPROM.read(5);
+  int mi = EEPROM.read(6);
+  int se = EEPROM.read(7);
+  lcd.setCursor(0, row);
+  if (dem <= 9) {
+    lcd.print('0');
+  }
+  lcd.print(dem);
+  lcd.print(":   ");
+  if (ho <= 9) {
+    lcd.print('0');
+  }
+  lcd.print(ho);
+  lcd.print(":");
+  if (mi <= 9) {
+    lcd.print('0');
+  }
+  lcd.print(mi);
+  lcd.print(":");
+  if (se <= 9) {
+    lcd.print('0');
+  }
+  lcd.print(se);
+  if (row == 3) row = 0;
+}
+
+void displaySaveTime() {
+  lcd.setCursor(0, 0);
+  lcd.print("Count Time: ");
+  if (h < 10) {
+    lcd.print("0");
+  }
+  lcd.print(h);
+
+  lcd.print(":");
+  if (m < 10) {
+    lcd.print("0");
+  }
+  lcd.print(m);
+
+  lcd.print(":");
+  if (s < 10) {
+    lcd.print("0");
+  }
+  lcd.print(s);
 }
