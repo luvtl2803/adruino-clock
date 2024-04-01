@@ -27,6 +27,8 @@ int phut = 0;
 int giay = 0;
 bool countDownSet = true;
 //Viet anh
+//Hai
+int currentOffset = 7;
 
 
 
@@ -65,6 +67,17 @@ void loop() {
 
     if (digitalRead(P1) == LOW) {  //Menu
       menu = 1;
+    }
+
+    //Hai
+    if (Serial.available() > 0) {
+      // Đọc giá trị được nhập từ Serial
+      int timezone = Serial.parseInt();
+      // Hiển thị giá trị đã nhập
+      Serial.print("Mui gio GMT+");
+      Serial.println(timezone);
+      // Thực hiện điều chỉnh múi giờ
+      adjustTimezone(timezone);
     }
   }
   if (menu == 1) {
@@ -439,3 +452,11 @@ void SetSecond() {
   delay(200);
 }
 ////////////////////////////////////////////////////////
+void adjustTimezone(int time) {
+  DateTime now = RTC.now(); // Get current time from RTC
+  int changeTime = time - currentOffset;
+  currentOffset = time;
+  TimeSpan offset = TimeSpan(0, changeTime, 0, 0); // Create TimeSpan for the new timezone offset
+  DateTime adjustedTime = now + offset; // Add the offset to the current time to get the adjusted time
+  RTC.adjust(adjustedTime); // Update RTC with the adjusted time
+}
