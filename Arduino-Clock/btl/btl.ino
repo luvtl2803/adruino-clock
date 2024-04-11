@@ -149,9 +149,9 @@ void setAlarm() {
   SetHourAlarm();
   SetMinuteAlarm();
   lcd.clear();
-  lcd.setCursor(5, 0);
+  lcd.setCursor(7, 0);
   lcd.print("ALARM");
-  lcd.setCursor(5, 1);
+  lcd.setCursor(7, 1);
   lcd.print(alarmHours, DEC);
   lcd.print(":");
   lcd.print(alarmMinutes, DEC);
@@ -203,7 +203,6 @@ void DisplayDateTime() {
 void SetHourAlarm() {
   lcd.clear();
   while (digitalRead(P4) == HIGH) {
-
     if (digitalRead(P2) == LOW) {
       if (alarmHours == 23) {
         alarmHours = 0;
@@ -220,7 +219,6 @@ void SetHourAlarm() {
       }
       delay(200);
     }
-    Serial.println(alarmHours);
     EEPROM.write(0, alarmHours);
     lcd.setCursor(0, 0);
     lcd.print("Set HOUR Alarm:");
@@ -238,7 +236,6 @@ void SetMinuteAlarm()  // Setting the alarm minutes
 {
   lcd.clear();
   while (digitalRead(P4) == HIGH) {
-
     if (digitalRead(P2) == LOW) {
       if (alarmMinutes == 59) {
         alarmMinutes = 0;
@@ -320,7 +317,7 @@ void Alarm() {
 
     if (now.hour() == eHour && now.minute() == eMin) {
       DateTime now = RTC.now();
-      for (int i = 0; i < 10; i++) {
+      for (int i = 0; i < 20; i++) {
         digitalWrite(buzzer, 880);
         digitalWrite(LED, HIGH);
         delay(300);
