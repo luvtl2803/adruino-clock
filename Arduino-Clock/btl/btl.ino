@@ -6,10 +6,10 @@
 LiquidCrystal_I2C lcd(0x27, 20, 4);  // Display  I2C 20 x 4
 RTC_DS1307 RTC;
 
-int P1 = 6;  // Button SET MENU'
+int P1 = 6;  // Button SET MENU
 int P2 = 7;  // Button +
 int P3 = 8;  // Button -
-int P4 = 9;  // SWITCH Alarm
+int P4 = 9;  // SWITCH Alarm / SET value
 
 #define LED 13
 #define buzzer 10
@@ -17,9 +17,8 @@ int P4 = 9;  // SWITCH Alarm
 int menu = 0;
 
 //An
-uint8_t alarmHours = 0, alarmMinutes = 0, eHour = 0, eMin = 0, oHour = 0, oMin = 0;  // Holds the current alarm time
+int alarmHours = 0, alarmMinutes = 0, eHour = 0, eMin = 0;  // Holds the current alarm time
 int setAll = 0;
-bool showName = false;
 //An
 
 //Viet anh
@@ -75,38 +74,32 @@ void loop() {
     Alarm();
 
     if (digitalRead(P1) == LOW) {  //Menu
+      lcd.clear();
       menu = 1;
-      delay(200);
     }
 
     if (digitalRead(P2) == LOW) {  //Menu
       lcd.clear();
-      while(digitalRead(P3) == HIGH){
-        lcd.setCursor(0,0);
+      while (digitalRead(P1) == HIGH) {
+        lcd.setCursor(0, 0);
         lcd.println("HA QUANG AN");
-        lcd.setCursor(0,1);
+        lcd.setCursor(0, 1);
         lcd.println("PHAM VIET ANH");
-        lcd.setCursor(0,2);
+        lcd.setCursor(0, 2);
         lcd.println("NGO THUY LUONG");
-        lcd.setCursor(0,3);
+        lcd.setCursor(0, 3);
         lcd.println("LE MINH HAI");
       }
-
+      lcd.clear();
     }
 
     //Hai
-    if (Serial.available() > 0) {
-      // Đọc giá trị được nhập từ Serial
-      int timezone = Serial.parseInt();
-      // Hiển thị giá trị đã nhập
-      Serial.print("Mui gio GMT+");
-      Serial.println(timezone);
-      // Thực hiện điều chỉnh múi giờ
-      adjustTimezone(timezone);
+    if (digitalRead(P3) == LOW) {
+      lcd.clear();
+      setTimezone();
     }
   }
   if (menu == 1) {
-    lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("1: Back");
     lcd.setCursor(0, 1);
@@ -117,6 +110,7 @@ void loop() {
     lcd.print("4: Count");
 
     if (digitalRead(P2) == LOW) {  //Alarm
+      lcd.clear();
       setAlarm();
       setAll = 1;
       menu = 0;
@@ -124,9 +118,11 @@ void loop() {
     }
 
     if (digitalRead(P3) == LOW) {  //CountDown
+      lcd.clear();
       SetTimeCountDown();
       lcd.clear();
       CountDown();
+      lcd.clear();
     }
 
     if (digitalRead(P4) == LOW) {
@@ -134,13 +130,14 @@ void loop() {
       displaySaveTime();
       timingStarted = true;
       setCount();
+      lcd.clear();
     }
 
-    if(digitalRead(P1) == LOW){
+    if (digitalRead(P1) == LOW) {
       lcd.clear();
       menu = 0;
     }
-    delay(200);
+    delay(100);
   }
   delay(200);
 }
@@ -156,7 +153,6 @@ void setAlarm() {
   lcd.print(":");
   lcd.print(alarmMinutes, DEC);
   delay(1000);
-  lcd.clear();
 }
 
 void DisplayDateTime() {
@@ -209,7 +205,7 @@ void SetHourAlarm() {
       } else {
         alarmHours = alarmHours + 1;
       }
-      delay(200);
+      delay(100);
     }
     if (digitalRead(P3) == LOW) {
       if (alarmHours == 0) {
@@ -217,7 +213,7 @@ void SetHourAlarm() {
       } else {
         alarmHours = alarmHours - 1;
       }
-      delay(200);
+      delay(100);
     }
     EEPROM.write(0, alarmHours);
     lcd.setCursor(0, 0);
@@ -229,7 +225,7 @@ void SetHourAlarm() {
     lcd.print(alarmHours, DEC);
     delay(200);
   }
-  delay(500);
+  delay(200);
 }
 
 void SetMinuteAlarm()  // Setting the alarm minutes
@@ -242,7 +238,7 @@ void SetMinuteAlarm()  // Setting the alarm minutes
       } else {
         alarmMinutes = alarmMinutes + 1;
       }
-      delay(200);
+      delay(100);
     }
     if (digitalRead(P3) == LOW) {
       if (alarmMinutes == 0) {
@@ -250,7 +246,7 @@ void SetMinuteAlarm()  // Setting the alarm minutes
       } else {
         alarmMinutes = alarmMinutes - 1;
       }
-      delay(200);
+      delay(100);
     }
     EEPROM.write(1, alarmMinutes);
     lcd.setCursor(0, 0);
@@ -262,7 +258,7 @@ void SetMinuteAlarm()  // Setting the alarm minutes
     lcd.print(alarmMinutes, DEC);
     delay(200);
   }
-  delay(500);
+  delay(200);
 }
 
 void printAllOn() {
@@ -301,29 +297,17 @@ void Alarm() {
     eHour = EEPROM.read(0);
     eMin = EEPROM.read(1);
 
-    Serial.print("Alarm: ");
-    Serial.print(eHour);
-    Serial.print(eMin);
-    Serial.println();
-
     DateTime now = RTC.now();
-    oHour = now.hour();
-    oMin = now.minute();
-
-    Serial.print("Time: ");
-    Serial.print(oHour);
-    Serial.print(oMin);
-    Serial.println();
 
     if (now.hour() == eHour && now.minute() == eMin) {
       DateTime now = RTC.now();
-      for (int i = 0; i < 20; i++) {
-        digitalWrite(buzzer, 880);
+      for (int i = 0; i < 25; i++) {
+        digitalWrite(buzzer, HIGH);
         digitalWrite(LED, HIGH);
-        delay(300);
-        digitalWrite(buzzer, 698);
+        delay(100);
+        digitalWrite(buzzer, LOW);
         digitalWrite(LED, LOW);
-        delay(300);
+        delay(100);
       }
       setAll = 0;
     } else {
@@ -444,7 +428,7 @@ void SetMinute()  // Setting the alarm minutes
       } else {
         phut = phut + 1;
       }
-      delay(200);
+      delay(100);
     }
     if (digitalRead(P3) == LOW) {
       if (phut == 0) {
@@ -452,7 +436,7 @@ void SetMinute()  // Setting the alarm minutes
       } else {
         phut = phut - 1;
       }
-      delay(200);
+      delay(100);
     }
     EEPROM.write(3, phut);
     lcd.setCursor(0, 0);
@@ -477,7 +461,7 @@ void SetSecond() {
       } else {
         giay = giay + 1;
       }
-      delay(200);
+      delay(100);
     }
     if (digitalRead(P3) == LOW) {
       if (giay == 0) {
@@ -485,7 +469,7 @@ void SetSecond() {
       } else {
         giay = giay - 1;
       }
-      delay(200);
+      delay(100);
     }
     EEPROM.write(4, giay);
     lcd.setCursor(0, 0);
@@ -498,15 +482,6 @@ void SetSecond() {
     delay(200);
   }
   delay(200);
-}
-////////////////////////////////////////////////////////
-void adjustTimezone(int time) {
-  DateTime now = RTC.now();  // Get current time from RTC
-  int changeTime = time - currentOffset;
-  currentOffset = time;
-  TimeSpan offset = TimeSpan(0, changeTime, 0, 0);  // Create TimeSpan for the new timezone offset
-  DateTime adjustedTime = now + offset;             // Add the offset to the current time to get the adjusted time
-  RTC.adjust(adjustedTime);                         // Update RTC with the adjusted time
 }
 ////////////////////////////////////////////////////////
 void setCount() {
@@ -523,6 +498,12 @@ void setCount() {
     }
     displaySaveTime();
     if (digitalRead(P3) == LOW) {
+      digitalWrite(LED, HIGH);
+      digitalWrite(buzzer, HIGH);
+      delay(100);
+      digitalWrite(LED, LOW);
+      digitalWrite(buzzer, LOW);
+
       EEPROM.write(5, h);
       EEPROM.write(6, m);
       EEPROM.write(7, s);
@@ -590,4 +571,53 @@ void displaySaveTime() {
     lcd.print("0");
   }
   lcd.print(s);
+}
+////////////////////////////////////////////////////////
+void setTimezone() {
+  int currentTimezone = currentOffset;
+  while (digitalRead(P4) == HIGH) {
+    if (digitalRead(P3) == LOW) {
+      if (currentTimezone == -12) {
+        currentTimezone = 12;
+      } else {
+        currentTimezone--;
+      }
+      delay(200);
+    }
+    if (digitalRead(P2) == LOW) {
+      if (currentTimezone == 12) {
+        currentTimezone = -12;
+      } else {
+        currentTimezone++;
+      }
+      delay(200);
+    }
+
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Timezone: GMT");
+    if (currentTimezone >= 0) {
+      lcd.print("+");
+    }
+    lcd.print(currentTimezone);
+    delay(200);
+  }
+  adjustTimezone(currentTimezone);
+  lcd.clear();
+}
+////////////////////////////////////////////////////////
+void adjustTimezone(int time) {
+  DateTime now = RTC.now();
+  int changeTime = time - currentOffset;
+  currentOffset = time;
+  TimeSpan offset = TimeSpan(0, changeTime, 0, 0);
+  DateTime adjustedTime = now + offset;
+  RTC.adjust(adjustedTime);
+
+  lcd.setCursor(0, 2);
+  lcd.print("Timezone: GMT");
+  if (time >= 0) {
+    lcd.print("+");
+  }
+  lcd.print(time);
 }
