@@ -74,6 +74,8 @@ void loop() {
     Alarm();
 
     if (digitalRead(P1) == LOW) {  //Menu
+      playBeep();
+
       lcd.clear();
       menu = 1;
     }
@@ -81,6 +83,8 @@ void loop() {
     if (digitalRead(P2) == LOW) {  //Menu
       lcd.clear();
       while (digitalRead(P1) == HIGH) {
+        playBeep();
+
         lcd.setCursor(0, 0);
         lcd.println("HA QUANG AN");
         lcd.setCursor(0, 1);
@@ -95,6 +99,8 @@ void loop() {
 
     //Hai
     if (digitalRead(P3) == LOW) {
+      playBeep();
+
       lcd.clear();
       setTimezone();
     }
@@ -110,6 +116,8 @@ void loop() {
     lcd.print("4: Count");
 
     if (digitalRead(P2) == LOW) {  //Alarm
+      playBeep();
+
       lcd.clear();
       setAlarm();
       setAll = 1;
@@ -118,6 +126,8 @@ void loop() {
     }
 
     if (digitalRead(P3) == LOW) {  //CountDown
+      playBeep();
+
       lcd.clear();
       SetTimeCountDown();
       lcd.clear();
@@ -126,6 +136,7 @@ void loop() {
     }
 
     if (digitalRead(P4) == LOW) {
+      playBeep();
       lcd.clear();
       displaySaveTime();
       timingStarted = true;
@@ -134,6 +145,8 @@ void loop() {
     }
 
     if (digitalRead(P1) == LOW) {
+      playBeep();
+
       lcd.clear();
       menu = 0;
     }
@@ -225,6 +238,7 @@ void SetHourAlarm() {
     lcd.print(alarmHours, DEC);
     delay(200);
   }
+  playBeep();
   delay(200);
 }
 
@@ -258,6 +272,7 @@ void SetMinuteAlarm()  // Setting the alarm minutes
     lcd.print(alarmMinutes, DEC);
     delay(200);
   }
+  playBeep();
   delay(200);
 }
 
@@ -276,14 +291,24 @@ void printAllOn() {
   }
   lcd.print(alarmMinutes, DEC);
 }
+
 void printAllOff() {
   lcd.setCursor(0, 3);
   lcd.print("Alarm: Off  ");
 }
 
+void playBeep(){
+  digitalWrite(LED, HIGH);
+  digitalWrite(buzzer, HIGH);
+  delay(100);
+  digitalWrite(LED, LOW);
+  digitalWrite(buzzer, LOW);
+}
+
 void Alarm() {
   if (digitalRead(P4) == LOW) {
     setAll = setAll + 1;
+    playBeep();
   }
   if (setAll == 0) {
     printAllOff();
@@ -378,6 +403,8 @@ void CountDown() {
       menu = 0;
     }
     if (digitalRead(P1) == LOW) {
+      playBeep();
+
       lcd.clear();
       countDownSet = false;
       menu = 0;
@@ -448,6 +475,7 @@ void SetMinute()  // Setting the alarm minutes
     lcd.print(phut, DEC);
     delay(200);
   }
+  playBeep();
   delay(200);
 }
 
@@ -481,6 +509,7 @@ void SetSecond() {
     lcd.print(giay, DEC);
     delay(200);
   }
+  playBeep();
   delay(200);
 }
 ////////////////////////////////////////////////////////
@@ -498,11 +527,7 @@ void setCount() {
     }
     displaySaveTime();
     if (digitalRead(P3) == LOW) {
-      digitalWrite(LED, HIGH);
-      digitalWrite(buzzer, HIGH);
-      delay(100);
-      digitalWrite(LED, LOW);
-      digitalWrite(buzzer, LOW);
+      playBeep();
 
       EEPROM.write(5, h);
       EEPROM.write(6, m);
